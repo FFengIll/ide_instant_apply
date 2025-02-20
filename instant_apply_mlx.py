@@ -114,6 +114,9 @@ def main(
 
 
 def create_cache(model: nn.Module) -> list[KVCache]:
+    # FIXME: here is a new version api to make cache directly
+    return make_prompt_cache(model)
+
     if hasattr(model, "make_cache"):
         return model.make_cache()
     else:

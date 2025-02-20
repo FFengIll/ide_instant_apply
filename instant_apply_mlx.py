@@ -1,33 +1,36 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "mlx-lm~=0.21.4",
+#     "typer~=0.9.4",
 # ]
 # ///
 
-import argparse
 import time
 
 import mlx.core as mx
 import mlx.nn as nn
 import mlx_lm
+import typer
 from mlx_lm.models.cache import KVCache, make_prompt_cache
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Instant Apply, from https://www.cursor.com/blog/instant-apply"
-    )
-    _ = parser.add_argument(
-        "model", type=str, help="Example: mlx-community/Meta-Llama-3.1-8B-8bit"
-    )
-    _ = parser.add_argument("target", type=str, help="Example: sample_target.py")
-    _ = parser.add_argument("edit", type=str, help="Example: sample_edit.py")
-    _ = parser.add_argument("--speculation-lookahead", type=int, default=64)
-    _ = parser.add_argument("--max-tokens", type=int, default=4096)
-    args = parser.parse_args()
+app = typer.Typer(help="Instant Apply, from https://www.cursor.com/blog/instant-apply")
 
-    model, tokenizer = mlx_lm.load(args.model)
-    with open(args.target) as target_file, open(args.edit) as edit_file:
+@app.command()
+def main(
+        model: str = typer.Argument(
+            "mlx-community/Meta-Llama-3.1-8B-8bit",
+            help="Example: mlx-community/Meta-Llama-3.1-8B-8bit",
+        ),
+        target: str = typer.Argument(
+            "sample_target.txt", help="Example: sample_target.txt"
+        ),
+        edit: str = typer.Argument("sample_edit.txt", help="Example: sample_edit.txt"),
+        speculation_lookahead: int = typer.Option(64, help="Speculation lookahead value"),
+        max_tokens: int = typer.Option(4096, help="Maximum number of tokens"),
+) -> None:
+    model, tokenizer = mlx_lm.load(model)
+    with open(target) as target_file, open(edit) as edit_file:
         target, edit = target_file.read(), edit_file.read()
     target_tokens, edit_tokens = tokenizer.encode(target), tokenizer.encode(edit)
     target_edit_dist = list(range(len(target_tokens) + 1))
@@ -58,7 +61,7 @@ def main() -> None:
     token = 0
     n_tokens = 0
 
-    for n in range(args.max_tokens):
+    for n in range(max_tokens):
         draft: list[int] = []
         target_idx = target_edit_dist.index(min(target_edit_dist))
         if target_idx > 0 and token == target_tokens[target_idx - 1]:
@@ -75,18 +78,18 @@ def main() -> None:
                     default=0,
                     key=lambda i: target_edit_dist[i + 1],
                 )
-                draft = target_tokens[target_idx + 1 :]
-        draft = draft[: args.speculation_lookahead] or [0]
+                draft = target_tokens[target_idx + 1:]
+        draft = draft[:speculation_lookahead] or [0]
         draft_toks = mx.array(draft)[None]
         input_toks = mx.concatenate([prompt, draft_toks[:, :-1]], axis=-1)
         logits = model(input_toks, cache=cache)
-        logits = logits[:, prompt.shape[1] - 1 :, :]
+        logits = logits[:, prompt.shape[1] - 1:, :]
         output_toks = logits.argmax(axis=-1)
         n_accepted = (output_toks == draft_toks).astype(mx.uint8).cummin().sum().item()
         n_used = min(n_accepted + 1, len(draft))
         break_flag = False
         for i in range(n_used):
-            prompt = output_toks[:, i : i + 1]
+            prompt = output_toks[:, i: i + 1]
             token = prompt.item()
             detokenizer.add_token(token)
             n_tokens += 1
@@ -142,4 +145,4 @@ def update_edit_dists(edit_dist: list[int], tokens: list[int], token: int) -> No
 
 
 if __name__ == "__main__":
-    main()
+    app()

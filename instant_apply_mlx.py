@@ -1,16 +1,16 @@
 # requires-python = ">=3.12"
 # dependencies = [
-#     "mlx-lm~=0.17.1",
+#     "mlx-lm~=0.21.4",
 # ]
 # ///
 
 import argparse
 import time
 
-import mlx_lm
 import mlx.core as mx
 import mlx.nn as nn
-from mlx_lm.models.base import KVCache
+import mlx_lm
+from mlx_lm.models.cache import KVCache, make_prompt_cache
 
 
 def main() -> None:

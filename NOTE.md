@@ -1,8 +1,8 @@
 # Note
 
 ## How it works
-Below is a usage of `Speculative Decoding`.
-Let us explain the code step by step.
+Below is a usage of `Speculative Decoding`.  
+Let us explain the code step by step.  
 
 ```python
 draft: list[int] = []
@@ -24,15 +24,22 @@ else:
         draft = target_tokens[target_idx + 1 :]
 ```
 
-`draft`: used to store the draft tokens
-`target_edit_dist`: used to store the index (I keep the original name) of the target tokens
+`draft`: used to store the draft tokens  
+`target_edit_dist`: used to store the index (I keep the original name) of the target tokens  
 
-check next token from `target` (the original code), then `edit` (the edited code),
-use one of them if matched.
+check next token from `target` (the original code), then `edit` (the edited code),  
+use one of them if matched.  
 
-> target - the original code
+> target - the original code  
 > edit - insert / modify
 
 if not matched, move idx (smallest) to position until mismatch `target`.
 
 > mismatch - delete
+
+## More details
+Pls learn `Speculative Decoding`.
+
+A common explanation:
+- For decoder model, it predicts next-one token. if we can guess next-k token and verify them in parallele, it becomes quick.
+- When we talk about code edit, many code is kept as original, so we can guess next-k and confirm it's right in most case which make token generation more fast.

@@ -37,6 +37,11 @@ if not matched, move idx (smallest) to position until mismatch `target`.
 
 > mismatch - delete
 
+
+## A Demo Image
+![](https://www.researchgate.net/publication/382080373/figure/fig4/AS:11431281259472374@1720495924597/LLMs-cooperate-with-draft-generator-for-speculative-decoding.png)
+
+
 ## More details
 Pls learn `Speculative Decoding`.
 
